@@ -7,20 +7,24 @@ import pygame
 import go
 import predict
 import numpy as np
-import copy
-from utils import *
 
 BACKGROUND = 'images/ramin.jpg'
 BOARD_SIZE = (820, 820)
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
 
+
+def one_hot(num, depth):
+    a = np.zeros((depth,))
+    a[int(num)] = 1
+    return a.astype(dtype='int8')
+
 class Stone(go.Stone):
     def __init__(self, board, point, color):
         """Create, initialize and draw a stone."""
         super(Stone, self).__init__(board, point, color)
         self.coords = (5 + self.point[0] * 40, 5 + self.point[1] * 40)
-        # self.draw()
+        self.draw()
 
     def draw(self):
         """Draw the stone as a circle."""
@@ -82,21 +86,6 @@ class Board(go.Board):
         if added_stone:
             added_stone.group.update_liberties()
 
-    def is_legal(self, added_stone=None):
-        """Updates the liberties of the entire board, group by group.
-
-        Usually a stone is added each turn. To allow killing by 'suicide',
-        all the 'old' groups should be updated before the newly added one.
-
-        """
-        for group in self.groups:
-            if added_stone:
-                if group == added_stone.group:
-                    continue
-            group.update_liberties()
-
-        return added_stone.group.is_legal()
-
     def get_x_for_model(self):
         game_state = np.zeros((19, 19))
         for group in self.groups:
@@ -110,15 +99,11 @@ class Board(go.Board):
         for i in range(len(game_state)):
             for j in range(len(game_state[i])):
                 game_state_chanle.append(one_hot(game_state[i][j], 3))  # chanel[0]:空 chanel[1]:黑 chanel2:白
-        last_move_chanle = np.zeros((19, 19, 1))
-        if self.last_point != None:
-            last_move_chanle[self.last_point[0] - 1][self.last_point[1] - 1][0] = 1
-        x = np.concatenate((np.array(game_state_chanle).reshape(19, 19, 3), last_move_chanle), axis=2)
         if self.next == BLACK:
             x2 = one_hot(0, 2)
         elif self.next == WHITE:
             x2 = one_hot(1, 2)
-        return np.array(x).reshape((-1, 19, 19, 4)), np.array(x2).reshape((-1, 2))
+        return np.array(game_state_chanle).reshape((-1, 19, 19, 3)), np.array(x2).reshape((-1, 2))
 
 
 if __name__ == '__main__':
@@ -130,8 +115,7 @@ if __name__ == '__main__':
     model = predict.load_model()
 
     print 'game start!'
-    HUMAN_OR_AI = 'AI'
-    BLACK_OR_WHITE = 'BLACK'
+    HUMAN_OR_AI = 'HUMAN'
     while True:
         if HUMAN_OR_AI == 'HUMAN':
             pygame.time.wait(250)
@@ -147,47 +131,18 @@ if __name__ == '__main__':
                             pass
                             # stone.remove()
                         else:
-                            fake_board = copy.deepcopy(board)
-                            fake_added_stone = Stone(fake_board, (x, y), fake_board.turn((x, y)))
-                            if fake_board.is_legal(fake_added_stone) == False:
-                                pass
-                            else:
-                                added_stone = Stone(board, (x, y), board.turn((x, y)))
-                                added_stone.draw()
-                                board.update_liberties(added_stone)
-                                HUMAN_OR_AI = 'AI'
+                            added_stone = Stone(board, (x, y), board.turn())
+                            board.update_liberties(added_stone)
+                            HUMAN_OR_AI = 'AI'
         elif HUMAN_OR_AI == 'AI':
-            if BLACK_OR_WHITE == 'BLACK':
-                x, x2 = board.get_x_for_model()
-                point = predict.predict(model, x, x2)
-                stone = board.search(point)
-                if stone:
-                    pass
-                else:
-                    fake_board = copy.deepcopy(board)
-                    fake_added_stone = Stone(fake_board, point, fake_board.turn(point))
-                    if fake_board.is_legal(fake_added_stone) == False:
-                        pass
-                    else:
-                        added_stone = Stone(board, point, board.turn(point))
-                        added_stone.draw()
-                        board.update_liberties(added_stone)
-                        HUMAN_OR_AI = 'HUMAN'
-                        # BLACK_OR_WHITE = 'WHITE'
-            elif BLACK_OR_WHITE == 'WHITE':
-                point = predict.random_point()
-                stone = board.search(point)
-                if stone:
-                    pass
-                else:
-                    fake_board = copy.deepcopy(board)
-                    fake_added_stone = Stone(fake_board, point, fake_board.turn(point))
-                    if fake_board.is_legal(fake_added_stone) == False:
-                        pass
-                    else:
-                        added_stone = Stone(board, point, board.turn(point))
-                        added_stone.draw()
-                        board.update_liberties(added_stone)
-                        BLACK_OR_WHITE = 'BLACK'
+            x, x2 = board.get_x_for_model()
+            point = predict.predict(model, x, x2)
+            stone = board.search(point)
+            if stone:
+                pass
+            else:
+                added_stone = Stone(board, point, board.turn())
+                board.update_liberties(added_stone)
+                HUMAN_OR_AI = 'HUMAN'
 
 

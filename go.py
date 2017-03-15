@@ -134,22 +134,6 @@ class Group(object):
         if len(self.liberties) == 0:
             self.remove()
 
-    def is_legal(self):
-        """Update the group's liberties.
-
-        As this method will remove the entire group if no liberties can
-        be found, it should only be called once per turn.
-
-        """
-        liberties = []
-        for stone in self.stones:
-            for liberty in stone.liberties:
-                liberties.append(liberty)
-        self.liberties = set(liberties)
-        if len(self.liberties) == 0:
-            return False
-        return True
-
     def __str__(self):
         """Return a list of the group's stones as a string."""
         return str([str(stone) for stone in self.stones])
@@ -159,7 +143,6 @@ class Board(object):
         """Create and initialize an empty board."""
         self.groups = []
         self.next = BLACK
-        self.last_point = None
 
     def search(self, point=None, points=[]):
         """Search the board for a stone.
@@ -182,9 +165,8 @@ class Board(object):
                     stones.append(stone)
         return stones
 
-    def turn(self, point):
+    def turn(self):
         """Keep track of the turn by flipping between BLACK and WHITE."""
-        self.last_point = point
         if self.next == BLACK:
             self.next = WHITE
             return BLACK
