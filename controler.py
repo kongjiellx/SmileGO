@@ -31,13 +31,17 @@ class controler(object):
 
     def one_hot(self, num, depth):
         a = np.zeros((depth,))
-        a[num] = 1
-        return a
+        a[int(num)] = 1
+        return a.astype(dtype='int8')
 
     def pre_x_y(self, path='kgs-19-2017-01-new/'):
         docs = os.listdir(path)
         games = []
+        num = 0
         for doc in docs:
+            if num > 2000:
+                break
+            num += 1
             try:
                 games.append(self.deal_sgf(path + doc))
             except:
@@ -59,19 +63,19 @@ class controler(object):
                 x2.append(self.one_hot(next_move[0] - 1, 2))
                 y.append(self.one_hot(next_move[1][0] * 19 + next_move[1][1], 361))
                 game_state[next_move[1][0]][next_move[1][1]] = next_move[0]
-        self.data = (np.array(x), np.array(x2), np.array(y))
+        # self.data = (np.array(x), np.array(x2), np.array(y))
         self.data_len = len(x)
-        print('%d train data!', self.data_len)
+        # print('data!', self.data_len)
         assert len(x) == len(x2) == len(y)
-        return np.array(x), np.array(x2), np.array(y)
+        return np.array(x).reshape((-1, 19, 19, 3)), np.array(x2), np.array(y)
 
-    def get_batch(self, batch_size):
-        if self.index + batch_size <= self.data_len:
-            ret = self.data[0][self.index: self.index + batch_size], self.data[1][self.index: self.index + batch_size], self.data[2][self.index: self.index + batch_size]
-            self.index += batch_size
-            return ret
-        else:
-            # random.shuffle(self.data)
-            self.index = 0
-            print('epoch down!')
-            return self.get_batch(batch_size)
+    # def get_batch(self, batch_size):
+    #     if self.index + batch_size <= self.data_len:
+    #         ret = self.data[0][self.index: self.index + batch_size], self.data[1][self.index: self.index + batch_size], self.data[2][self.index: self.index + batch_size]
+    #         self.index += batch_size
+    #         return ret
+    #     else:
+    #         # random.shuffle(self.data)
+    #         self.index = 0
+    #         print('epoch down!')
+    #         return self.get_batch(batch_size)

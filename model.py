@@ -1,8 +1,9 @@
 import theano.sandbox.cuda
-theano.sandbox.cuda.use("gpu1")
+theano.sandbox.cuda.use("gpu0")
 import keras
 
-from keras.models import Model
+from keras.models import Model, model_from_json
+from keras.callbacks import EarlyStopping, ModelCheckpoint
 from keras import backend as K
 
 from keras.layers import (
@@ -29,41 +30,63 @@ class model(object):
     def bulid_model(self):
         x = Input(shape=(19, 19, 3), dtype='float32', name='x')
         x2 = Input(shape=(2,), dtype='float32', name='x2')
-        conv1 = Convolution2D(nb_filter=256, nb_row=5, nb_col=5, activation='relu', input_shape=(19, 19, 3))(x)
+        conv1 = Convolution2D(nb_filter=128, nb_row=5, nb_col=5, activation='relu', input_shape=(19, 19, 3))(x)
         bn1 = BatchNormalization()(conv1)
-        pool1 = MaxPooling2D(pool_size=(2, 2), strides=(1, 1))(bn1)
 
-        conv2 = Convolution2D(nb_filter=128, nb_row=3, nb_col=3, activation='relu')(pool1)
+        conv2 = Convolution2D(nb_filter=128, nb_row=3, nb_col=3, activation='relu')(bn1)
         bn2 = BatchNormalization()(conv2)
-        pool2 = MaxPooling2D(pool_size=(2, 2), strides=(1, 1))(bn2)
 
-        conv3 = Convolution2D(nb_filter=128, nb_row=3, nb_col=3, activation='relu')(pool2)
+        conv3 = Convolution2D(nb_filter=128, nb_row=3, nb_col=3, activation='relu')(bn2)
         bn3 = BatchNormalization()(conv3)
-        pool3 = MaxPooling2D(pool_size=(2, 2), strides=(1, 1))(bn3)
 
-        conv4 = Convolution2D(nb_filter=128, nb_row=3, nb_col=3, activation='relu')(pool3)
-        bn4 = BatchNormalization()(conv4)
-        pool4 = MaxPooling2D(pool_size=(2, 2), strides=(1, 1))(bn4)
-
-        conv5 = Convolution2D(nb_filter=128, nb_row=3, nb_col=3, activation='relu')(pool4)
-        bn5 = BatchNormalization()(conv5)
-        pool5 = MaxPooling2D(pool_size=(3, 3), strides=(1, 1))(bn5)
-
-        cnn_out = Flatten()(pool5)
+        cnn_out = Flatten()(bn3)
         merge1 = merge([cnn_out, x2], mode='concat', concat_axis=1)
 
         out = Dense(output_dim=361, init="he_normal", activation="softmax", name='out')(merge1)
         self.model = Model(input=[x, x2], output=out)
 
     def train(self):
-        ctrl = controler.controler()
-        train_x, train_x2, train_y = ctrl.pre_x_y()
+        checkpointer = ModelCheckpoint(filepath='./fake.model',
+                                       verbose=1,
+                                       monitor='val_loss',
+                                       save_best_only=True)
+        earlystop = EarlyStopping(monitor='val_loss',
+                                  patience=10,
+                                  verbose=1,
+                                  mode='auto')
 
         self.model.compile(loss='categorical_crossentropy', optimizer='adadelta', metrics=['accuracy'])
+        json_model = self.model.to_json()
+        fjson = open('model.json', 'w')
+        fjson.write(json_model)
+        fjson.close()
+        print 'model_json_saved!'
+        ctrl = controler.controler()
+        train_x, train_x2, train_y = ctrl.pre_x_y(path='kgs-19-2017-01-new/')
+        valid_x, valid_x2, valid_y = ctrl.pre_x_y(path='kgs-19-2017-01-new/')
+        print 'train_data_len: ', len(train_x)
+        print 'valid_data_len: ', len(valid_x)
         self.model.fit({'x': train_x, 'x2': train_x2}, {'out': train_y},
                   batch_size=32,
-                  nb_epoch=10,
+                  nb_epoch=100,
                   shuffle=True,
-                  verbose=1)
+                  verbose=1,
+                  callbacks=[checkpointer, earlystop],
+                  validation_data=({'x': valid_x, 'x2': valid_x2}, {'out': valid_y}))
+
+    def test(self):
+        ctrl = controler.controler()
+        x, x2, y = ctrl.pre_x_y(path='kgs-19-2017-01-new/')
+
+        print('Loading model...')
+        fp = open('model.json')
+        model = model_from_json(fp.readline().strip())
+        model.load_weights('fake.model')
+        fp.close()
+        print('Compile...')
+        model.compile(loss='categorical_crossentropy', optimizer='adadelta', metrics=['accuracy'])
+        pred = model.predict({'x': x, 'x2': x2}, batch_size=32, verbose=1)
+        for pre in pred:
+            print pre.argmax()
 
 
