@@ -9,14 +9,16 @@ import json
 
 def predict(model, x, x2):
     # print('Predicting...')
-    pred = model.predict({'x': x, 'x2': x2}, batch_size=1,verbose=2)
+    pred = model.predict({'x': x, 'x2': x2}, batch_size=1, verbose=2)
     # print(time_pred)
     point = np.random.choice(361, 1, p=pred[0])
     point = (point[0] / 19 + 1, point[0] % 19 + 1)
     print point
     return point
 
-
+def random_point():
+    point = np.random.randint(0, 360)
+    return (point / 19 + 1, point % 19 + 1)
 
 def load_model():
     ### load model

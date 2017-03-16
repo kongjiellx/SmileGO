@@ -1,30 +1,28 @@
 #!/usr/bin/env python
 # coding: utf-8
-from sys import exit
 
 import pygame
-
 import go
-import predict
 import numpy as np
+
+from utils import *
 
 BACKGROUND = 'images/ramin.jpg'
 BOARD_SIZE = (820, 820)
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
 
-
-def one_hot(num, depth):
-    a = np.zeros((depth,))
-    a[int(num)] = 1
-    return a.astype(dtype='int8')
+pygame.init()
+pygame.display.set_caption('Goban')
+screen = pygame.display.set_mode(BOARD_SIZE, 0, 32)
+background = pygame.image.load(BACKGROUND).convert()
 
 class Stone(go.Stone):
     def __init__(self, board, point, color):
         """Create, initialize and draw a stone."""
         super(Stone, self).__init__(board, point, color)
         self.coords = (5 + self.point[0] * 40, 5 + self.point[1] * 40)
-        self.draw()
+        # self.draw()
 
     def draw(self):
         """Draw the stone as a circle."""
@@ -71,7 +69,7 @@ class Board(go.Board):
         screen.blit(background, (0,0))
         pygame.display.update()
 
-    def update_liberties(self, added_stone=None):
+    def update_liberties(self, added_stone):
         """Updates the liberties of the entire board, group by group.
         
         Usually a stone is added each turn. To allow killing by 'suicide',
@@ -85,6 +83,21 @@ class Board(go.Board):
             group.update_liberties()
         if added_stone:
             added_stone.group.update_liberties()
+
+    def is_legal(self, added_stone):
+        """Updates the liberties of the entire board, group by group.
+
+        Usually a stone is added each turn. To allow killing by 'suicide',
+        all the 'old' groups should be updated before the newly added one.
+
+        """
+        for group in self.groups:
+            if added_stone:
+                if group == added_stone.group:
+                    continue
+            group.update_liberties()
+
+        return added_stone.group.is_legal()
 
     def get_x_for_model(self):
         game_state = np.zeros((19, 19))
@@ -104,45 +117,5 @@ class Board(go.Board):
         elif self.next == WHITE:
             x2 = one_hot(1, 2)
         return np.array(game_state_chanle).reshape((-1, 19, 19, 3)), np.array(x2).reshape((-1, 2))
-
-
-if __name__ == '__main__':
-    pygame.init()
-    pygame.display.set_caption('Goban')
-    screen = pygame.display.set_mode(BOARD_SIZE, 0, 32)
-    background = pygame.image.load(BACKGROUND).convert()
-    board = Board()
-    model = predict.load_model()
-
-    print 'game start!'
-    HUMAN_OR_AI = 'HUMAN'
-    while True:
-        if HUMAN_OR_AI == 'HUMAN':
-            pygame.time.wait(250)
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    exit()
-                if event.type == pygame.MOUSEBUTTONDOWN:
-                    if event.button == 1 and board.outline.collidepoint(event.pos):
-                        x = int(round(((event.pos[0] - 5) / 40.0), 0))
-                        y = int(round(((event.pos[1] - 5) / 40.0), 0))
-                        stone = board.search(point=(x, y))
-                        if stone:
-                            pass
-                            # stone.remove()
-                        else:
-                            added_stone = Stone(board, (x, y), board.turn())
-                            board.update_liberties(added_stone)
-                            HUMAN_OR_AI = 'AI'
-        elif HUMAN_OR_AI == 'AI':
-            x, x2 = board.get_x_for_model()
-            point = predict.predict(model, x, x2)
-            stone = board.search(point)
-            if stone:
-                pass
-            else:
-                added_stone = Stone(board, point, board.turn())
-                board.update_liberties(added_stone)
-                HUMAN_OR_AI = 'HUMAN'
 
 

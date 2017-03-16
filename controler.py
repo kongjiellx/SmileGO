@@ -1,81 +1,198 @@
 #coding:utf-8
 import os, random
 import numpy as np
+from utils import *
+import go
+import copy
+import random
 
-class controler(object):
+class AGame(go.Board):
     def __init__(self):
-        self.index = 0
+        """Create, initialize and draw an empty board."""
+        super(AGame, self).__init__()
 
-    # 处理一个sgf文件，返回落子序列
-    def deal_sgf(self, path):
-        fp = open(path, 'r')
-        for line in fp:
-            if line.startswith('AB') or line.startswith('AW'):
-                raise Exception('not normal sgf file')
-            if line.startswith(';'):
-                tmoves = line.split(';')
-                moves = []
-                for m in tmoves:
-                    if len(m) == 5 and (m.startswith('W') or m.startswith('B')) and m[2].isalpha() and m[3].isalpha():
-                        moves.append(m)
-                return moves
-        raise Exception('not normal sgf file')
+    def update_liberties(self, added_stone):
+        """Updates the liberties of the entire board, group by group.
 
-    def deal_move(self, move):
-        if move.startswith('B'):
-            black_or_white = 1
-        else:
-            black_or_white = 2
-        coordinates = move[2:4]
-        return (black_or_white, (ord(coordinates[0]) - ord('a'), ord(coordinates[1]) - ord('a')))
+        Usually a stone is added each turn. To allow killing by 'suicide',
+        all the 'old' groups should be updated before the newly added one.
 
-    def one_hot(self, num, depth):
-        a = np.zeros((depth,))
-        a[int(num)] = 1
-        return a.astype(dtype='int8')
+        """
+        for group in self.groups:
+            if added_stone:
+                if group == added_stone.group:
+                    continue
+            group.update_liberties()
+        if added_stone:
+            added_stone.group.update_liberties()
 
-    def pre_x_y(self, path='kgs-19-2017-01-new/'):
-        docs = os.listdir(path)
-        games = []
-        num = 0
-        for doc in docs:
-            if num > 2000:
+    def is_legal(self, added_stone):
+        """Updates the liberties of the entire board, group by group.
+
+        Usually a stone is added each turn. To allow killing by 'suicide',
+        all the 'old' groups should be updated before the newly added one.
+
+        """
+        for group in self.groups:
+            if added_stone:
+                if group == added_stone.group:
+                    continue
+            group.update_liberties()
+        return added_stone.group.is_legal()
+
+# 处理一个sgf文件，返回落子序列
+def deal_sgf(path):
+    fp = open(path, 'r')
+    moves = []
+    for line in fp:
+        if line.startswith('AB') or line.startswith('AW'):
+            break
+        if line.startswith(';'):
+            tmoves = line.split(';')
+            for m in tmoves:
+                if len(m) == 5 and (m.startswith('W') or m.startswith('B')) and m[2].isalpha() and m[3].isalpha():
+                    moves.append(m)
+            break
+    fp.close()
+    return moves
+
+def deal_move(move):
+    if move.startswith('B'):
+        black_or_white = go.BLACK
+    else:
+        black_or_white = go.WHITE
+    coordinates = move[2:4]
+    return (black_or_white, (ord(coordinates[0]) - ord('a') + 1, ord(coordinates[1]) - ord('a') + 1))
+
+def get_panmian(board):
+    ret = np.zeros((19, 19, 3))
+    for group in board.groups:
+        for stone in group.stones:
+            if stone.color == go.WHITE:
+                ret[stone.point[0] - 1][stone.point[1] - 1][2] = 1
+            elif stone.color == go.BLACK:
+                ret[stone.point[0] - 1][stone.point[1] - 1][1] = 1
+    return ret
+
+def get_liberities(board):
+    ret = np.zeros((19, 19, 4))
+    for group in board.groups:
+        for stone in group.stones:
+            assert len(stone.group.liberties) >= 1
+            if len(stone.group.liberties) >= 4:
+                ret[stone.point[0] - 1][stone.point[1] - 1][3] = 1
+            else:
+                ret[stone.point[0] - 1][stone.point[1] - 1][len(stone.group.liberties) - 1] = 1
+    return ret
+
+def get_liberties_after_move(board):
+    ret = np.zeros((19, 19, 6))
+    for i in range(19):
+        for j in range(19):
+            stone = board.search((i + 1, j + 1))
+            if stone:
+                continue
+
+            fake_board = copy.deepcopy(board)
+            fake_added_stone = go.Stone(fake_board, (i + 1, j + 1), fake_board.turn((i + 1, j + 1)))
+            if not fake_board.is_legal(fake_added_stone):
+                continue
+
+            fake_board.update_liberties(fake_added_stone)
+            assert len(fake_added_stone.group.liberties) >= 1
+            if len(fake_added_stone.group.liberties) >= 6:
+                ret[i][j][5] = 1
+            else:
+                ret[i][j][len(fake_added_stone.group.liberties) - 1] = 1
+    return ret
+
+def get_legality(board):
+    ret = np.zeros((19, 19, 1))
+    for i in range(19):
+        for j in range(19):
+            stone = board.search((i + 1, j + 1))
+            if stone:
+                continue
+            fake_board = copy.deepcopy(board)
+            fake_added_stone = go.Stone(fake_board, (i + 1, j + 1), fake_board.turn((i + 1, j + 1)))
+            if not fake_board.is_legal(fake_added_stone):
+                ret[i][j][0] = 0
+            else:
+                ret[i][j][0] = 1
+    return ret
+
+def get_history(board):
+    ret = np.zeros((19, 19, 3))
+    for i in range(1, 4):
+        if len(board.step_history) >= i:
+            ret[board.step_history[-i][0] - 1][board.step_history[-i][1] - 1][i - 1] = 1
+    return ret
+
+def get_capture_size(board):
+    pass
+
+def get_black_white(board):
+    if board.next == go.BLACK:
+        return np.concatenate((np.ones((19, 19, 1)), np.zeros((19, 19, 1))), axis=2)
+    else:
+        return np.concatenate((np.zeros((19, 19, 1)), np.ones((19, 19, 1))), axis=2)
+
+def deal_a_step(board):
+    panmian = get_panmian(board)    # 盘面(19, 19 ,3)
+    liberties = get_liberities(board)   # 气(19, 19, 4)
+    # liberties_after_move = get_liberties_after_move(board)  # (19, 19 ,6)
+    # legality = get_legality(board) # 合法性(19, 19, 1)
+    history = get_history(board) #3步历史步数 (19, 19, 3)
+    # capture_size = get_capture_size(board) #走当前位置可以提几子 (19, 19, 7)
+    black_white = get_black_white(board) # 黑白(19, 19, 2)
+    # return size (19, 19, 19)
+    return np.concatenate((panmian, liberties, history, black_white), axis=2)
+
+def pre_x_y(path='kgs-19-2017-01-new/'):
+    docs = os.listdir(path)
+    games = []
+    num = 0
+    random.shuffle(docs)
+    for doc in docs:
+        if num > 5:
+            break
+        num += 1
+        one_game = deal_sgf(path + doc)
+        if one_game != []:
+            games.append(one_game)
+    x = []  # x
+    y = []  # label
+    index = 0
+    for game in games:
+        if index % 10 == 0:
+            print index
+        index += 1
+        agame = AGame()
+        break_flag = False
+        _x = []
+        _y = []
+        for move in game:
+            # next_move形如(1, (5, 6))表示下一步为黑棋走子，落子坐标为(5, 6)
+            next_move = deal_move(move)
+            _x.append(deal_a_step(agame))
+            _y.append(one_hot((next_move[1][0] - 1) * 19 + next_move[1][1] - 1, 361))
+            if next_move[0] != agame.next: # 有人pass
+                break_flag = True
                 break
-            num += 1
+            stone = agame.search(next_move[1])
+            if stone:
+                break_flag = True
+                break
             try:
-                games.append(self.deal_sgf(path + doc))
+                added_stone = go.Stone(agame, next_move[1], agame.turn(next_move[1]))
+                agame.update_liberties(added_stone)
             except:
-                pass
-        x = []  # 当前棋盘状态
-        x2 = [] # 1表示该黑棋走， 2表示该白棋走
-        y = []  # label
-        for game in games:
-            # 记录棋盘状态，对每个位置，0表示无子，1表示黑子，2表示白子
-            game_state = np.zeros(shape=(19, 19))
-            for move in game:
-                game_state_chanle = []
-                for i in range(len(game_state)):
-                    for j in range(len(game_state[i])):
-                        game_state_chanle.append(self.one_hot(game_state[i][j], 3)) # chanel[0]:空 chanel[1]:黑 chanel2:白
-                x.append(game_state_chanle)
-                # next_move形如(1, (5, 6))表示下一步为黑棋走子，落子坐标为(5, 6)
-                next_move = self.deal_move(move)
-                x2.append(self.one_hot(next_move[0] - 1, 2))
-                y.append(self.one_hot(next_move[1][0] * 19 + next_move[1][1], 361))
-                game_state[next_move[1][0]][next_move[1][1]] = next_move[0]
-        # self.data = (np.array(x), np.array(x2), np.array(y))
-        self.data_len = len(x)
-        # print('data!', self.data_len)
-        assert len(x) == len(x2) == len(y)
-        return np.array(x).reshape((-1, 19, 19, 3)), np.array(x2), np.array(y)
+                print 'error file!'
+                break_flag = True
+                break
+        if not break_flag:
+            x += _x
+            y += _y
 
-    # def get_batch(self, batch_size):
-    #     if self.index + batch_size <= self.data_len:
-    #         ret = self.data[0][self.index: self.index + batch_size], self.data[1][self.index: self.index + batch_size], self.data[2][self.index: self.index + batch_size]
-    #         self.index += batch_size
-    #         return ret
-    #     else:
-    #         # random.shuffle(self.data)
-    #         self.index = 0
-    #         print('epoch down!')
-    #         return self.get_batch(batch_size)
+    return np.array(x, dtype='int8').reshape((-1, 19, 19, 12)), \
+           np.array(y, dtype='int8')
