@@ -1,5 +1,5 @@
 # set mode PVE EVE PVP
-mode = 'EVE'
+mode = 'PVE'
 
 # pve mode config
 if mode == 'PVE':
@@ -7,4 +7,4 @@ if mode == 'PVE':
     AI_STRATEGY = 'MODEL'
 if mode == 'EVE':
     BLACK_AI_STRATEGY = 'MODEL'
-    WHITE_AI_STRATEGY = 'MODEL'
+    WHITE_AI_STRATEGY = 'RANDOM'

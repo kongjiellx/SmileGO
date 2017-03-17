@@ -2,12 +2,12 @@ from goban import *
 import predict
 import copy
 from configure import *
+from controler import deal_a_step
 
 if __name__ == '__main__':
     board = Board()
     model = predict.load_model()
     print 'game start!'
-    HUMAN_OR_AI = 'HUMAN'
     if mode == 'PVP':
         HUMAN_OR_AI = 'HUMAN'
         CHANGE = False
@@ -51,17 +51,17 @@ if __name__ == '__main__':
                     if BLACK_AI_STRATEGY == 'RANDOM':
                         point = predict.random_point()
                     elif BLACK_AI_STRATEGY == 'MODEL':
-                        x, x2 = board.get_x_for_model()
-                        point = predict.predict(model, x, x2)
+                        x = deal_a_step(board)
+                        point = predict.predict(model, x)
                 elif board.next == WHITE:
                     if WHITE_AI_STRATEGY == 'RANDOM':
                         point = predict.random_point()
                     elif WHITE_AI_STRATEGY == 'MODEL':
-                        x, x2 = board.get_x_for_model()
-                        point = predict.predict(model, x, x2)
+                        x = deal_a_step(board)
+                        point = predict.predict(model, x)
             else:
-                x, x2 = board.get_x_for_model()
-                point = predict.predict(model, x, x2)
+                x = deal_a_step(board)
+                point = predict.predict(model, x)
             stone = board.search(point)
             if stone:
                 pass
