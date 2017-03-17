@@ -7,12 +7,14 @@ import numpy as np
 import math
 import json
 
-def predict(model, x, x2):
+def predict(model, x):
     # print('Predicting...')
-    pred = model.predict({'x': x, 'x2': x2}, batch_size=1, verbose=2)
+    pred = model.predict({'x': np.reshape(x, (1, 19, 19, 12))}, batch_size=1, verbose=2)
     # print(time_pred)
-    point = np.random.choice(361, 1, p=pred[0])
-    point = (point[0] / 19 + 1, point[0] % 19 + 1)
+    # point = np.random.choice(361, 1, p=pred[0])
+    # point = (point[0] / 19 + 1, point[0] % 19 + 1)
+    pred = np.argmax(pred)
+    point = (pred / 19 + 1, pred % 19 + 1)
     print point
     return point
 
