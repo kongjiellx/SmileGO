@@ -7,8 +7,13 @@ import numpy as np
 
 from utils import *
 
+<<<<<<< HEAD
+BACKGROUND = 'images/small.jpg'
+BOARD_SIZE = (630, 630)
+=======
 BACKGROUND = 'images/ramin.jpg'
 BOARD_SIZE = (820, 820)
+>>>>>>> a6dc7bd1d6b12a09f744649ed31d653028ff2e0a
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
 
@@ -21,18 +26,22 @@ class Stone(go.Stone):
     def __init__(self, board, point, color):
         """Create, initialize and draw a stone."""
         super(Stone, self).__init__(board, point, color)
+<<<<<<< HEAD
+        self.coords = (15 + self.point[0] * 30, 15 + self.point[1] * 30)
+=======
         self.coords = (5 + self.point[0] * 40, 5 + self.point[1] * 40)
+>>>>>>> a6dc7bd1d6b12a09f744649ed31d653028ff2e0a
         # self.draw()
 
     def draw(self):
         """Draw the stone as a circle."""
-        pygame.draw.circle(screen, self.color, self.coords, 20, 0)
+        pygame.draw.circle(screen, self.color, self.coords, 15, 0)
         pygame.display.update()
 
     def remove(self):
         """Remove the stone from board."""
-        blit_coords = (self.coords[0] - 20, self.coords[1] - 20)
-        area_rect = pygame.Rect(blit_coords, (40, 40))
+        blit_coords = (self.coords[0] - 15, self.coords[1] - 15)
+        area_rect = pygame.Rect(blit_coords, (30, 30))
         screen.blit(background, blit_coords, area_rect)
         pygame.display.update()
         super(Stone, self).remove()
@@ -41,7 +50,7 @@ class Board(go.Board):
     def __init__(self):
         """Create, initialize and draw an empty board."""
         super(Board, self).__init__()
-        self.outline = pygame.Rect(45, 45, 720, 720)
+        self.outline = pygame.Rect(45, 45, 540, 540)
         self.draw()
 
     def draw(self):
@@ -60,11 +69,11 @@ class Board(go.Board):
         self.outline.inflate_ip(20, 20)
         for i in range(18):
             for j in range(18):
-                rect = pygame.Rect(45 + (40 * i), 45 + (40 * j), 40, 40)
+                rect = pygame.Rect(45 + (30 * i), 45 + (30 * j), 30, 30)
                 pygame.draw.rect(background, BLACK, rect, 1)
         for i in range(3):
             for j in range(3):
-                coords = (165 + (240 * i), 165 + (240 * j))
+                coords = (135 + (180 * i), 135 + (180 * j))
                 pygame.draw.circle(background, BLACK, coords, 5, 0)
         screen.blit(background, (0,0))
         pygame.display.update()
