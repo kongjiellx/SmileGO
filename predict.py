@@ -9,11 +9,8 @@ import json
 
 def predict(model, x):
     # print('Predicting...')
-<<<<<<< HEAD
     pred = model.predict({'x': np.reshape(x, (1, 19 ,19 ,12))}, batch_size=1, verbose=2)
-=======
-    pred = model.predict({'x': np.reshape(x, (1, 19, 19, 12))}, batch_size=1, verbose=2)
->>>>>>> a6dc7bd1d6b12a09f744649ed31d653028ff2e0a
+
     # print(time_pred)
     # point = np.random.choice(361, 1, p=pred[0])
     # point = (point[0] / 19 + 1, point[0] % 19 + 1)

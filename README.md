@@ -1,5 +1,5 @@
-# SmileGO
-<<<<<<< HEAD
+﻿# SmileGO
+
 use keras
 
 first vesion only use cnn to build a policy network
@@ -12,4 +12,3 @@ will add MTCS and RL
 使用一万盘棋的棋谱，大概200w步。验证正确率30%多一点点的样子。
 目前估计棋力大概略比18k高一丝丝
 ……尴尬
->>>>>>> a6dc7bd1d6b12a09f744649ed31d653028ff2e0a

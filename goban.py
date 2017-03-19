@@ -7,13 +7,8 @@ import numpy as np
 
 from utils import *
 
-<<<<<<< HEAD
 BACKGROUND = 'images/small.jpg'
 BOARD_SIZE = (630, 630)
-=======
-BACKGROUND = 'images/ramin.jpg'
-BOARD_SIZE = (820, 820)
->>>>>>> a6dc7bd1d6b12a09f744649ed31d653028ff2e0a
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
 
@@ -26,12 +21,8 @@ class Stone(go.Stone):
     def __init__(self, board, point, color):
         """Create, initialize and draw a stone."""
         super(Stone, self).__init__(board, point, color)
-<<<<<<< HEAD
         self.coords = (15 + self.point[0] * 30, 15 + self.point[1] * 30)
-=======
-        self.coords = (5 + self.point[0] * 40, 5 + self.point[1] * 40)
->>>>>>> a6dc7bd1d6b12a09f744649ed31d653028ff2e0a
-        # self.draw()
+
 
     def draw(self):
         """Draw the stone as a circle."""

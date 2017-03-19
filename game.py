@@ -2,11 +2,7 @@ from goban import *
 import predict
 import copy
 from configure import *
-<<<<<<< HEAD
-from controler import *
-=======
 from controler import deal_a_step
->>>>>>> a6dc7bd1d6b12a09f744649ed31d653028ff2e0a
 
 if __name__ == '__main__':
     board = Board()
@@ -33,13 +29,8 @@ if __name__ == '__main__':
                     exit()
                 if event.type == pygame.MOUSEBUTTONDOWN:
                     if event.button == 1 and board.outline.collidepoint(event.pos):
-<<<<<<< HEAD
                         x = int(round(((event.pos[0] - 15) / 30.0), 0))
                         y = int(round(((event.pos[1] - 15) / 30.0), 0))
-=======
-                        x = int(round(((event.pos[0] - 5) / 40.0), 0))
-                        y = int(round(((event.pos[1] - 5) / 40.0), 0))
->>>>>>> a6dc7bd1d6b12a09f744649ed31d653028ff2e0a
                         stone = board.search(point=(x, y))
                         if stone:
                             pass
