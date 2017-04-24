@@ -13,15 +13,15 @@ def predict(model, x):
 
     # print(time_pred)
     # point = np.random.choice(361, 1, p=pred[0])
-    # point = (point[0] / 19 + 1, point[0] % 19 + 1)
+    # point = (point[0] / 19, point[0] % 19)
     pred = np.argmax(pred)
-    point = (pred / 19 + 1, pred % 19 + 1)
-    print point
+    point = (pred / 19, pred % 19)
+    # print point
     return point
 
 def random_point():
     point = np.random.randint(0, 360)
-    return (point / 19 + 1, point % 19 + 1)
+    return (point / 19, point % 19)
 
 def load_model():
     ### load model

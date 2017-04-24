@@ -62,16 +62,16 @@ def deal_move(move):
     else:
         black_or_white = go.WHITE
     coordinates = move[2:4]
-    return (black_or_white, (ord(coordinates[0]) - ord('a') + 1, ord(coordinates[1]) - ord('a') + 1))
+    return (black_or_white, (ord(coordinates[0]) - ord('a'), ord(coordinates[1]) - ord('a')))
 
 def get_panmian(board):
     ret = np.zeros((19, 19, 3))
     for group in board.groups:
         for stone in group.stones:
             if stone.color == go.WHITE:
-                ret[stone.point[0] - 1][stone.point[1] - 1][2] = 1
+                ret[stone.point[0]][stone.point[1]][2] = 1
             elif stone.color == go.BLACK:
-                ret[stone.point[0] - 1][stone.point[1] - 1][1] = 1
+                ret[stone.point[0]][stone.point[1]][1] = 1
     return ret
 
 def get_liberities(board):
@@ -80,21 +80,21 @@ def get_liberities(board):
         for stone in group.stones:
             assert len(stone.group.liberties) >= 1
             if len(stone.group.liberties) >= 4:
-                ret[stone.point[0] - 1][stone.point[1] - 1][3] = 1
+                ret[stone.point[0]][stone.point[1]][3] = 1
             else:
-                ret[stone.point[0] - 1][stone.point[1] - 1][len(stone.group.liberties) - 1] = 1
+                ret[stone.point[0]][stone.point[1]][len(stone.group.liberties) - 1] = 1
     return ret
 
 def get_liberties_after_move(board):
     ret = np.zeros((19, 19, 6))
     for i in range(19):
         for j in range(19):
-            stone = board.search((i + 1, j + 1))
+            stone = board.search((i, j))
             if stone:
                 continue
 
             fake_board = copy.deepcopy(board)
-            fake_added_stone = go.Stone(fake_board, (i + 1, j + 1), fake_board.turn((i + 1, j + 1)))
+            fake_added_stone = go.Stone(fake_board, (i, j ), fake_board.turn((i, j)))
             if not fake_board.is_legal(fake_added_stone):
                 continue
 
@@ -110,11 +110,11 @@ def get_legality(board):
     ret = np.zeros((19, 19, 1))
     for i in range(19):
         for j in range(19):
-            stone = board.search((i + 1, j + 1))
+            stone = board.search((i, j))
             if stone:
                 continue
             fake_board = copy.deepcopy(board)
-            fake_added_stone = go.Stone(fake_board, (i + 1, j + 1), fake_board.turn((i + 1, j + 1)))
+            fake_added_stone = go.Stone(fake_board, (i, j), fake_board.turn((i, j)))
             if not fake_board.is_legal(fake_added_stone):
                 ret[i][j][0] = 0
             else:
@@ -125,7 +125,7 @@ def get_history(board):
     ret = np.zeros((19, 19, 3))
     for i in range(1, 4):
         if len(board.step_history) >= i:
-            ret[board.step_history[-i][0] - 1][board.step_history[-i][1] - 1][i - 1] = 1
+            ret[board.step_history[-i][0]][board.step_history[-i][1]][i - 1] = 1
     return ret
 
 def get_capture_size(board):
@@ -175,7 +175,7 @@ def pre_x_y(path='kgs-19-2017-01-new/'):
             # next_move形如(1, (5, 6))表示下一步为黑棋走子，落子坐标为(5, 6)
             next_move = deal_move(move)
             _x.append(deal_a_step(agame))
-            _y.append(one_hot((next_move[1][0] - 1) * 19 + next_move[1][1] - 1, 361))
+            _y.append(one_hot((next_move[1][0]) * 19 + next_move[1][1], 361))
             if next_move[0] != agame.next: # 有人pass
                 break_flag = True
                 break

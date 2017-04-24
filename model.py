@@ -65,14 +65,14 @@ class model(object):
         print 'valid_data_len: ', len(valid_x)
         self.model.fit({'x': train_x}, {'out': train_y},
                   batch_size=32,
-                  nb_epoch=100,
+                  nb_epoch=1,
                   shuffle=True,
                   verbose=1,
                   callbacks=[checkpointer, earlystop],
                   validation_data=({'x': valid_x}, {'out': valid_y}))
 
     def test(self):
-        x, x2, y = pre_x_y(path='kgs-19-2017-01-new/')
+        x, y = pre_x_y(path='kgs-19-2017-01-new/')
 
         print('Loading model...')
         fp = open('model.json')

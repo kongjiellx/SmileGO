@@ -29,8 +29,8 @@ if __name__ == '__main__':
                     exit()
                 if event.type == pygame.MOUSEBUTTONDOWN:
                     if event.button == 1 and board.outline.collidepoint(event.pos):
-                        x = int(round(((event.pos[0] - 15) / 30.0), 0))
-                        y = int(round(((event.pos[1] - 15) / 30.0), 0))
+                        x = int(round(((event.pos[0] - 15) / 30.0) - 1, 0))
+                        y = int(round(((event.pos[1] - 15) / 30.0) - 1, 0))
                         stone = board.search(point=(x, y))
                         if stone:
                             pass

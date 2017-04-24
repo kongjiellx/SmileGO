@@ -21,7 +21,7 @@ class Stone(go.Stone):
     def __init__(self, board, point, color):
         """Create, initialize and draw a stone."""
         super(Stone, self).__init__(board, point, color)
-        self.coords = (15 + self.point[0] * 30, 15 + self.point[1] * 30)
+        self.coords = (15 + (self.point[0] + 1) * 30, 15 + (self.point[1] + 1) * 30)
 
 
     def draw(self):
