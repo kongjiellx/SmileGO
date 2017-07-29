@@ -12,9 +12,10 @@ def predict(model, x):
     pred = model.predict({'x': np.reshape(x, (1, 19 ,19 ,12))}, batch_size=1, verbose=2)
 
     # print(time_pred)
-    # point = np.random.choice(361, 1, p=pred[0])
+    pred = np.random.choice(361, 1, p=pred[0])
+    pred = pred[0]
     # point = (point[0] / 19, point[0] % 19)
-    pred = np.argmax(pred)
+    # pred = np.argmax(pred)
     point = (pred / 19, pred % 19)
     # print point
     return point
